@@ -1,0 +1,48 @@
+services:
+  example-site:
+    container_name: example-site
+    # image: ghcr.io/boost-creative/docker-wordpress-8:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # restart: unless-stopped
+    mem_limit: ${WP_MEM_LIMIT:-512m}
+    cpus: ${WP_CPU_LIMIT:-2}
+    depends_on:
+      - example-site-db
+    volumes:
+      - ./wordpress:/usr/src/wordpress
+      - sock:/tmp/sock:ro
+      # - './db:/var/db'
+    ports:
+      - "127.0.0.1:8000:80"
+    environment:
+      TZ: "America/New_York"
+      # specify any plugins to install by slug
+      # ADDITIONAL_PLUGINS: "cache-enabler redis-cache"
+      DB_HOST: localhost:/tmp/sock/mysqld.sock
+      # REDIS_HOST: /tmp/sock/valkey.sock
+      # cron jobs to run from within container (separate lines with \n)
+      # CRON: |
+      #   0 * * * * touch hello-world
+      #   5 * * * * curl http://127.0.0.1/webhook &>/dev/null"
+  example-site-db:
+    container_name: example-site-mariadb
+    image: "yobasystems/alpine-mariadb:11"
+    restart: unless-stopped
+    mem_limit: ${WP_MEM_LIMIT:-512m}
+    # cpus: ${WP_CPU_LIMIT:-4}
+    environment:
+      MYSQL_DATABASE: wp
+      MYSQL_USER: ${SERVICE_USER_MARIADB:-wp}
+      MYSQL_PASSWORD: ${SERVICE_PASSWORD_MARIADB:-wp}
+      MYSQL_ROOT_PASSWORD: ${SERVICE_PASSWORD_MARIADB:-wp}
+    volumes:
+      - sock:/var/run/mysqld
+      - db:/var/lib/mysql
+      - ./config/mariadb/my.cnf:/etc/my.cnf
+      - ./config/mariadb/db-entrypoint.sh:/scripts/run.sh
+
+volumes:
+  db: null
+  sock: null
