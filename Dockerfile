@@ -1,39 +1,28 @@
-FROM alpine:3.23
+# Official PHP image: built from php.net sources, so PHP security releases land
+# within hours instead of waiting for Alpine's php83 packages.
+FROM php:8.3-fpm-alpine
+
+# PHP extensions (the official image already includes ctype, curl, dom, fileinfo,
+# iconv, mbstring, openssl, pdo, session, simplexml, sodium, tokenizer, xml*, zlib)
+ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/download/2.12.0/install-php-extensions /usr/local/bin/
+RUN install-php-extensions \
+  apcu \
+  exif \
+  gd \
+  igbinary \
+  imagick \
+  intl \
+  msgpack \
+  mysqli \
+  opcache \
+  redis \
+  soap \
+  sockets \
+  vips \
+  zip
 
 # Install packages
 RUN apk --no-cache add \
-  php83 \
-  php83-fpm \
-  php83-mysqli \
-  php83-json \
-  php83-openssl \
-  php83-curl \
-  php83-zlib \
-  php83-xml \
-  php83-phar \
-  php83-intl \
-  php83-dom \
-  php83-xmlreader \
-  php83-xmlwriter \
-  php83-exif \
-  php83-fileinfo \
-  php83-sodium \
-  php83-simplexml \
-  php83-ctype \
-  php83-mbstring \
-  php83-zip \
-  php83-opcache \
-  php83-iconv \
-  php83-pecl-imagick \
-  php83-pecl-vips \
-  php83-session \
-  php83-tokenizer \
-  php83-gd \
-  php83-pecl-redis \
-  php83-soap \
-  php83-pdo \
-  php83-sqlite3 \
-  php83-pecl-apcu \
   mariadb-client \
   nginx \
   supervisor \
@@ -44,15 +33,18 @@ RUN apk --no-cache add \
   tzdata \
   ca-certificates
 
-# Create symlink so programs depending on `php` still function
-RUN ln -s /usr/bin/php83 /usr/bin/php
+# Production php.ini defaults (matches what Alpine's php83 package shipped)
+RUN cp /usr/local/etc/php/php.ini-production /usr/local/etc/php/php.ini
+
+# Keep the old Alpine package paths working for scripts and CRON entries
+RUN ln -s /usr/local/bin/php /usr/bin/php && ln -s /usr/local/bin/php /usr/bin/php83
 
 # Configure nginx
 COPY config/nginx.conf /etc/nginx/nginx.conf
 
 # Configure PHP-FPM
-COPY config/fpm-pool.conf /etc/php83/php-fpm.d/zzz_custom.conf
-COPY config/php.ini /etc/php83/conf.d/zzz_custom.ini
+COPY config/fpm-pool.conf /usr/local/etc/php-fpm.d/zzz_custom.conf
+COPY config/php.ini /usr/local/etc/php/conf.d/zzz_custom.ini
 
 # Configure supervisord
 COPY config/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
@@ -72,6 +64,9 @@ COPY entrypoint.sh /entrypoint.sh
 ENTRYPOINT [ "/entrypoint.sh" ]
 
 EXPOSE 80
+
+# supervisord is PID 1; the php base image defaults to SIGQUIT for bare php-fpm
+STOPSIGNAL SIGTERM
 
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
 
