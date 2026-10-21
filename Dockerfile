@@ -77,6 +77,6 @@ CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
 
 # healthcheck runs cron queue every 5 mintes - add disable_cron to wp-config
 # plugins are loaded unless WP_CRON_SKIP_PLUGINS is set to true or 1
-HEALTHCHECK --interval=300s --timeout=120s CMD curl -fsS http://localhost/ >/dev/null && \
-  case "$WP_CRON_SKIP_PLUGINS" in true|TRUE|1) SKIP_PLUGINS=--skip-plugins ;; *) SKIP_PLUGINS= ;; esac && \
-  su -s /bin/sh nobody -c "sleep $(tr -dc 0-9 </dev/urandom | head -c2) && wp cron event run --due-now --skip-themes $SKIP_PLUGINS --path=/usr/src/wordpress --quiet" || exit 1
+COPY config/healthcheck.sh /usr/local/bin/healthcheck
+RUN chmod +x /usr/local/bin/healthcheck
+HEALTHCHECK --interval=300s --timeout=120s CMD /usr/local/bin/healthcheck
