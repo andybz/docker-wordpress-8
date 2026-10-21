@@ -1,7 +1,7 @@
 services:
   example-site:
     container_name: example-site
-    image: ghcr.io/boost-creative/docker-wordpress-8:latest
+    image: ghcr.io/andybz/docker-wordpress-8:latest
     restart: unless-stopped
     mem_limit: ${WP_MEM_LIMIT:-512m}
     cpus: ${WP_CPU_LIMIT:-2}

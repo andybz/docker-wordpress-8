@@ -1,7 +1,7 @@
 services:
   example-site:
     container_name: example-site
-    # image: ghcr.io/boost-creative/docker-wordpress-8:latest
+    # image: ghcr.io/andybz/docker-wordpress-8:latest
     build:
       context: .
       dockerfile: Dockerfile
