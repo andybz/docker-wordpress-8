@@ -15,7 +15,8 @@ fi
 case "$WP_CRON_SKIP_PLUGINS" in true|TRUE|1) SKIP_PLUGINS=--skip-plugins ;; *) SKIP_PLUGINS= ;; esac
 # random delay so containers sharing the host don't all run cron at once
 sleep "$(tr -dc 0-9 </dev/urandom | head -c2)"
-if ! su -s /bin/sh nobody -c "wp cron event run --due-now --skip-themes $SKIP_PLUGINS --path=/usr/src/wordpress --quiet"; then
+# The theme loads: themes schedule cron jobs and provide email templates that cron sends
+if ! su -s /bin/sh nobody -c "wp cron event run --due-now $SKIP_PLUGINS --path=/usr/src/wordpress --quiet"; then
   echo "wp cron failed"
   status=1
 fi
