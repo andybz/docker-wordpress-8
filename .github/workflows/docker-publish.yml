@@ -3,6 +3,11 @@ name: Make Docker Image
 on:
   push:
     branches: [main]
+  # Weekly rebuild so PHP/Alpine security releases in the php:8.3-fpm-alpine
+  # base image reach the sites (via Watchtower) without a code change.
+  schedule:
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
 
 env:
   # Use docker.io for Docker Hub if empty
@@ -41,5 +46,6 @@ jobs:
         with:
           context: .
           platforms: linux/amd64,linux/arm64
+          pull: true
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
